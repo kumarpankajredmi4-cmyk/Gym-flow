@@ -1,0 +1,1091 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>GymFlow</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    background: #0E0F11; color: #F0F0EE; font-family: 'Inter', -apple-system, sans-serif;
+    overflow-x: hidden;
+  }
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-thumb { background: #232529; border-radius: 8px; }
+  input, select, button { font-family: inherit; }
+  input:focus, select:focus, button:focus-visible { outline: 2px solid #C8FF4D; outline-offset: 2px; }
+
+  .screen { display: none; min-height: 100vh; }
+  .screen.visible { display: block; }
+
+  #pinScreen.visible { display: flex; align-items: center; justify-content: center; padding: 20px; }
+  .pin-wrap { width: 360px; max-width: 100%; }
+  .brand-row { display: flex; align-items: center; gap: 10px; justify-content: center; margin-bottom: 28px; }
+  .brand-mark { width: 34px; height: 34px; border-radius: 10px; background: #C8FF4D; display: flex; align-items: center; justify-content: center; }
+  .brand-name { font-size: 19px; font-weight: 700; letter-spacing: -0.3px; }
+  .pin-card { background: #17181B; border: 1px solid #232529; border-radius: 18px; padding: 28px; }
+  .pin-card-head { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+  .pin-card-head span { font-size: 13.5px; font-weight: 600; }
+  .pin-sub { font-size: 12.5px; color: #7A7D83; margin-bottom: 18px; line-height: 1.5; }
+  #pinInput {
+    width: 100%; background: #0E0F11; border: 1px solid #26282C; border-radius: 10px;
+    padding: 12px 14px; color: #F5F5F3; font-size: 18px; letter-spacing: 4px;
+    font-family: 'JetBrains Mono', monospace; text-align: center;
+  }
+  #pinInput.error-border { border-color: #FF5C5C; }
+  .pin-error { display: none; gap: 6px; align-items: flex-start; margin-top: 10px; font-size: 12.5px; color: #FF8A8A; }
+  .pin-error.visible { display: flex; }
+  .unlock-btn {
+    width: 100%; margin-top: 18px; background: #C8FF4D; color: #0E0F11; border: none;
+    border-radius: 10px; padding: 12px 14px; font-size: 14px; font-weight: 700; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    transition: box-shadow .2s, transform .15s;
+  }
+  .unlock-btn:hover { box-shadow: 0 0 24px rgba(200,255,77,0.35); transform: translateY(-1px); }
+  .unlock-btn:disabled { opacity: 0.7; cursor: default; }
+  .pin-foot { text-align: center; font-size: 11.5px; color: #54565C; margin-top: 16px; }
+  .admin-link {
+    display: block; margin: 20px auto 0; background: none; border: none; color: #6F7177;
+    font-size: 12px; cursor: pointer; text-decoration: underline;
+  }
+  .spin { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.3); border-top-color: #0E0F11; border-radius: 50%; animation: spin 0.7s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  #expiredScreen.visible { display: flex; align-items: center; justify-content: center; padding: 20px; }
+  .expired-wrap { width: 400px; max-width: 100%; text-align: center; }
+  .expired-icon {
+    width: 56px; height: 56px; border-radius: 16px; background: rgba(245,181,68,0.1);
+    display: flex; align-items: center; justify-content: center; margin: 0 auto 18px;
+  }
+  .expired-wrap h1 { font-size: 19px; font-weight: 700; margin-bottom: 8px; }
+  .expired-wrap p { font-size: 13.5px; color: #8A8D93; line-height: 1.6; }
+  .renew-box { margin-top: 22px; background: #17181B; border: 1px solid #232529; border-radius: 14px; padding: 18px; text-align: left; }
+  .renew-label { font-size: 12.5px; color: #7A7D83; margin-bottom: 4px; }
+  .renew-amt { font-size: 22px; font-weight: 700; font-family: 'JetBrains Mono', monospace; color: #C8FF4D; }
+  .renew-note { font-size: 12px; color: #6F7177; margin-top: 2px; }
+  .back-btn {
+    margin-top: 18px; background: none; border: 1px solid #26282C; color: #8A8D93;
+    border-radius: 10px; padding: 10px 16px; font-size: 13px; cursor: pointer;
+  }
+
+  #dashboardScreen.visible { display: flex; min-height: 100vh; }
+  .sidebar { width: 240px; border-right: 1px solid #1c1d20; padding: 24px 14px; display: flex; flex-direction: column; flex-shrink: 0; height: 100vh; position: sticky; top: 0; }
+  .sb-brand { display: flex; align-items: center; gap: 10px; padding: 0 10px; margin-bottom: 24px; }
+  .gym-box { padding: 10px 12px; background: #141518; border-radius: 12px; border: 1px solid #1f2024; margin-bottom: 18px; }
+  .gym-box-label { font-size: 12px; color: #7A7D83; margin-bottom: 2px; }
+  .gym-box-name { font-size: 13.5px; font-weight: 600; color: #F0F0EE; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .nav { display: flex; flex-direction: column; gap: 2px; }
+  .nav-item {
+    display: flex; align-items: center; gap: 11px; padding: 9px 12px; border-radius: 10px;
+    border: none; cursor: pointer; background: transparent; color: #8A8D93; font-size: 13.5px;
+    font-weight: 500; text-align: left; position: relative; transition: background .18s, color .18s; width: 100%;
+  }
+  .nav-item:hover { background: #18191c; }
+  .nav-item.active { background: #18191c; color: #F5F5F3; font-weight: 600; }
+  .nav-item.active::before {
+    content: ''; position: absolute; left: -14px; top: 50%; transform: translateY(-50%);
+    width: 3px; height: 16px; border-radius: 4px; background: #C8FF4D; box-shadow: 0 0 8px rgba(200,255,77,0.7);
+  }
+  .plan-box { padding: 10px 12px; border-radius: 12px; margin-bottom: 10px; }
+  .lock-btn {
+    width: 100%; display: flex; align-items: center; gap: 8px; justify-content: center;
+    background: none; border: 1px solid #232529; color: #8A8D93; border-radius: 10px;
+    padding: 8px 12px; font-size: 12.5px; cursor: pointer;
+  }
+
+  main.dash-main { flex: 1; padding: 26px 32px 40px; overflow-y: auto; }
+  .topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 28px; flex-wrap: wrap; gap: 14px; }
+  .topbar h1 { font-size: 22px; font-weight: 700; letter-spacing: -0.4px; }
+  .topbar p { font-size: 13.5px; color: #7A7D83; margin-top: 3px; }
+  .topbar-actions { display: flex; align-items: center; gap: 12px; }
+  .search-box { display: flex; align-items: center; gap: 8px; background: #17181B; border: 1px solid #232529; border-radius: 10px; padding: 8px 12px; width: 200px; }
+  .search-box input { background: none; border: none; outline: none; color: #F0F0EE; font-size: 13px; width: 100%; }
+  .add-btn {
+    display: flex; align-items: center; gap: 6px; background: #C8FF4D; color: #0E0F11; border: none;
+    border-radius: 10px; padding: 9px 14px; font-size: 13px; font-weight: 700; cursor: pointer;
+    transition: box-shadow .2s, transform .15s;
+  }
+  .add-btn:hover { box-shadow: 0 0 24px rgba(200,255,77,0.35); transform: translateY(-1px); }
+
+  .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 28px; }
+  .stat-card {
+    background: linear-gradient(180deg, #17181B 0%, #141518 100%); border: 1px solid #232529;
+    border-radius: 18px; padding: 20px 22px; position: relative; overflow: hidden;
+    transition: transform .2s, border-color .2s; opacity: 0; animation: fadeUp .5s ease forwards;
+  }
+  .stat-card:hover { transform: translateY(-2px); border-color: #2c2e33; }
+  .stat-top { display: flex; justify-content: space-between; align-items: flex-start; }
+  .stat-label { font-size: 13px; color: #8A8D93; font-weight: 500; }
+  .stat-value { font-family: 'JetBrains Mono', monospace; font-size: 32px; font-weight: 600; color: #F5F5F3; margin-top: 14px; letter-spacing: -0.5px; font-variant-numeric: tabular-nums; }
+  .stat-note { font-size: 12.5px; color: #6F7177; margin-top: 6px; }
+  .stat-bar-track { margin-top: 16px; height: 4px; background: #202226; border-radius: 4px; overflow: hidden; }
+  .stat-bar-fill { height: 100%; width: 0%; background: linear-gradient(90deg, #C8FF4D, #9FE03A); border-radius: 4px; transition: width 1s cubic-bezier(.22,1,.36,1); box-shadow: 0 0 12px rgba(200,255,77,0.35); }
+  @keyframes fadeUp { from { opacity:0; transform: translateY(8px);} to {opacity:1; transform:none;} }
+
+  .content-grid { display: grid; grid-template-columns: 1.7fr 1fr; gap: 20px; }
+  .section-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+  .section-title { font-size: 15.5px; font-weight: 600; }
+  .hint { font-size: 12px; color: #6F7177; }
+
+  .members-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .member-card { background: #17181B; border: 1px solid #232529; border-radius: 16px; padding: 18px; transition: border-color .2s, transform .2s; }
+  .member-card:hover { border-color: #2c2e33; transform: translateY(-1px); }
+  .member-top { display: flex; align-items: center; gap: 12px; }
+  .avatar { width: 42px; height: 42px; border-radius: 12px; background: linear-gradient(135deg, #232529, #18191c); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; color: #C8FF4D; border: 1px solid #2a2c30; font-family: 'JetBrains Mono', monospace; flex-shrink: 0; }
+  .member-info { flex: 1; min-width: 0; }
+  .member-name { color: #F0F0EE; font-size: 14.5px; font-weight: 600; }
+  .member-goal { color: #7A7D83; font-size: 12.5px; margin-top: 1px; }
+  .status-pill { display: flex; align-items: center; gap: 5px; font-size: 11.5px; font-weight: 600; padding: 4px 9px; border-radius: 20px; white-space: nowrap; border: none; cursor: pointer; }
+  .status-dot { width: 6px; height: 6px; border-radius: 50%; }
+  .member-foot { display: flex; gap: 18px; margin-top: 16px; padding-top: 14px; border-top: 1px solid #1f2024; }
+  .foot-label { font-size: 11px; color: #6F7177; margin-bottom: 3px; }
+  .foot-value { font-family: 'JetBrains Mono', monospace; font-size: 14px; font-weight: 600; background: none; border: none; cursor: pointer; padding: 0; }
+  .streak-value { display: flex; align-items: center; gap: 4px; font-size: 14px; color: #F0F0EE; font-weight: 600; font-family: 'JetBrains Mono', monospace; }
+
+  .notif-list { display: flex; flex-direction: column; gap: 10px; }
+  .notif-card { background: #17181B; border: 1px solid #232529; border-radius: 14px; padding: 14px; }
+  .notif-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+  .notif-tag { font-size: 10.5px; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; }
+  .notif-time { font-size: 11px; color: #5F6166; }
+  .notif-title { font-size: 13.5px; font-weight: 600; color: #F0F0EE; margin-bottom: 3px; }
+  .notif-body { font-size: 12.5px; color: #8A8D93; line-height: 1.4; }
+
+  .collection-card { margin-top: 18px; padding: 16px; border-radius: 14px; background: linear-gradient(135deg, #17181B, #141518); border: 1px solid #232529; }
+  .collection-head { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; font-size: 13px; font-weight: 600; }
+  .collection-value { font-family: 'JetBrains Mono', monospace; font-size: 26px; font-weight: 600; color: #F5F5F3; }
+  .collection-trend { display: flex; align-items: center; gap: 4px; font-size: 12px; color: #3DDC84; margin-top: 4px; }
+
+  .empty-state { border: 1px dashed #26282C; border-radius: 16px; padding: 40px 20px; text-align: center; color: #6F7177; font-size: 13.5px; }
+
+  .placeholder { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 55vh; text-align: center; color: #6F7177; }
+  .placeholder-icon { width: 56px; height: 56px; border-radius: 16px; background: #17181B; border: 1px solid #232529; display: flex; align-items: center; justify-content: center; margin-bottom: 16px; }
+  .placeholder h2 { font-size: 17px; color: #F0F0EE; font-weight: 600; margin-bottom: 6px; }
+  .placeholder p { font-size: 13.5px; max-width: 320px; }
+
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 50; padding: 20px; }
+  .modal-overlay.visible { display: flex; }
+  .modal-box { width: 380px; max-width: 100%; background: #17181B; border: 1px solid #232529; border-radius: 18px; padding: 22px; }
+  .modal-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; }
+  .modal-head h3 { font-size: 15.5px; font-weight: 600; }
+  .modal-close { background: none; border: none; color: #8A8D93; cursor: pointer; font-size: 18px; line-height: 1; }
+  .field { margin-bottom: 14px; }
+  .field-label { font-size: 12px; color: #8A8D93; margin-bottom: 6px; }
+  .field input, .field select {
+    width: 100%; background: #0E0F11; border: 1px solid #26282C; border-radius: 9px;
+    padding: 9px 12px; color: #F0F0EE; font-size: 13.5px;
+  }
+  .modal-error { display: flex; gap: 6px; align-items: flex-start; margin-bottom: 14px; font-size: 12.5px; color: #FF8A8A; }
+  .modal-submit {
+    width: 100%; margin-top: 8px; background: #C8FF4D; color: #0E0F11; border: none;
+    border-radius: 10px; padding: 13px 14px; font-size: 13.5px; font-weight: 700; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    transition: box-shadow .2s, transform .15s;
+  }
+  .modal-submit:hover { box-shadow: 0 0 24px rgba(200,255,77,0.35); transform: translateY(-1px); }
+  .modal-submit:disabled { opacity: 0.7; cursor: default; }
+
+  #adminScreen.visible { display: block; min-height: 100vh; padding: 28px 24px 60px; }
+  .admin-wrap { max-width: 720px; margin: 0 auto; }
+  .admin-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+  .admin-head-left { display: flex; align-items: center; gap: 10px; }
+  .admin-head h1 { font-size: 19px; font-weight: 700; }
+  .admin-back { background: none; border: 1px solid #26282C; color: #8A8D93; border-radius: 9px; padding: 7px 12px; font-size: 12.5px; cursor: pointer; }
+  .admin-sub { font-size: 12.5px; color: #6F7177; margin-bottom: 22px; }
+  .create-gym-btn {
+    display: flex; align-items: center; gap: 7px; background: #C8FF4D; color: #0E0F11; border: none;
+    border-radius: 10px; padding: 10px 16px; font-size: 13.5px; font-weight: 700; cursor: pointer; margin-bottom: 22px;
+    transition: box-shadow .2s, transform .15s;
+  }
+  .create-gym-btn:hover { box-shadow: 0 0 24px rgba(200,255,77,0.35); transform: translateY(-1px); }
+  .gym-row { background: #17181B; border: 1px solid #232529; border-radius: 14px; padding: 16px; margin-bottom: 10px; }
+  .gym-row-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+  .gym-row-name { font-size: 14.5px; font-weight: 600; color: #F0F0EE; }
+  .gym-row-pin { font-size: 12px; color: #7A7D83; margin-top: 2px; font-family: 'JetBrains Mono', monospace; }
+  .gym-row-badge { font-size: 11px; font-weight: 700; padding: 4px 9px; border-radius: 20px; }
+  .gym-row-foot { display: flex; justify-content: space-between; align-items: center; margin-top: 14px; padding-top: 12px; border-top: 1px solid #1f2024; }
+  .gym-row-meta { font-size: 12px; color: #6F7177; }
+  .gym-row-actions { display: flex; gap: 8px; }
+  .renew-btn { background: rgba(200,255,77,0.1); color: #C8FF4D; border: none; border-radius: 8px; padding: 6px 11px; font-size: 12px; font-weight: 600; cursor: pointer; }
+  .del-btn { background: none; border: 1px solid #26282C; color: #8A8D93; border-radius: 8px; padding: 6px 9px; cursor: pointer; display: flex; align-items: center; }
+  .del-confirm-btn { background: rgba(255,92,92,0.15); color: #FF8A8A; border: none; border-radius: 8px; padding: 6px 11px; font-size: 12px; font-weight: 600; cursor: pointer; }
+
+  .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #17181B; border: 1px solid #232529; color: #F0F0EE; padding: 10px 18px; border-radius: 10px; font-size: 13px; z-index: 100; display: none; }
+  .toast.visible { display: block; }
+  .toast.error { border-color: rgba(255,92,92,0.4); color: #FF8A8A; }
+
+  @media (max-width: 980px) {
+    .stats-grid { grid-template-columns: repeat(2, 1fr); }
+    .content-grid { grid-template-columns: 1fr; }
+    .members-grid { grid-template-columns: 1fr; }
+    .sidebar { width: 76px; }
+    .sb-brand span, .nav-item span, .gym-box, .plan-text { display: none; }
+    .nav-item { justify-content: center; }
+  }
+  @media (prefers-reduced-motion: reduce) { .stat-card { animation: none; opacity: 1; } }
+</style>
+</head>
+<body>
+
+<div id="pinScreen" class="screen visible">
+  <div class="pin-wrap">
+    <div class="brand-row">
+      <div class="brand-mark"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0E0F11" stroke-width="2.5"><path d="M6.5 6.5 17.5 17.5"/><path d="m21 21-1-1"/><path d="m3 3 1 1"/><path d="m18 22 4-4"/><path d="m2 6 4-4"/><path d="m3 10 7-7"/><path d="m14 21 7-7"/></svg></div>
+      <span class="brand-name">GymFlow</span>
+    </div>
+    <div class="pin-card">
+      <div class="pin-card-head">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#8A8D93" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        <span>Enter your gym PIN</span>
+      </div>
+      <p class="pin-sub">This was given to you when you signed up. Contact your GymFlow rep if you've lost it.</p>
+      <input id="pinInput" type="text" inputmode="text" autocomplete="off" placeholder="PIN" maxlength="20" />
+      <div id="pinError" class="pin-error">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#FF8A8A" stroke-width="2" style="flex-shrink:0; margin-top:1px;"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4M12 17h.01"/></svg>
+        <span id="pinErrorText"></span>
+      </div>
+      <button id="unlockBtn" class="unlock-btn">Unlock dashboard</button>
+    </div>
+    <p class="pin-foot">Each gym's data is private and only visible with its own PIN.</p>
+  </div>
+</div>
+
+<div id="expiredScreen" class="screen">
+  <div class="expired-wrap">
+    <div class="expired-icon">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#F5B544" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/><path d="M12 8v4M12 16h.01"/></svg>
+    </div>
+    <h1 id="expiredGymName">This gym</h1>
+    <p>Your GymFlow access ended on <strong id="expiredDate" style="color:#F0F0EE;"></strong>. Your data is safe and waiting — renew to pick up right where you left off.</p>
+    <div class="renew-box">
+      <div class="renew-label">Renewal</div>
+      <div class="renew-amt">₹1,000</div>
+      <div class="renew-note">3 more months of access</div>
+    </div>
+    <p style="font-size:12px; color:#6F7177; margin-top:16px;">Pay your GymFlow contact to get reactivated — they'll extend your PIN the same day.</p>
+    <button id="expiredBackBtn" class="back-btn">Back to PIN screen</button>
+  </div>
+</div>
+
+<div id="dashboardScreen" class="screen">
+  <aside class="sidebar">
+    <div class="sb-brand">
+      <div class="brand-mark" style="width:30px;height:30px;border-radius:9px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0E0F11" stroke-width="2.5"><path d="M6.5 6.5 17.5 17.5"/><path d="m21 21-1-1"/><path d="m3 3 1 1"/><path d="m18 22 4-4"/><path d="m2 6 4-4"/><path d="m3 10 7-7"/><path d="m14 21 7-7"/></svg></div>
+      <span style="font-size:16px; font-weight:700; letter-spacing:-0.3px;">GymFlow</span>
+    </div>
+    <div class="gym-box">
+      <div class="gym-box-label">Gym</div>
+      <div class="gym-box-name" id="sbGymName">—</div>
+    </div>
+    <nav class="nav" id="navList"></nav>
+    <div style="margin-top:auto;">
+      <div class="plan-box" id="planBox">
+        <div id="planBoxTitle" style="font-size:11.5px; font-weight:600;"></div>
+        <div id="planBoxSub" style="font-size:11px; color:#6F7177; margin-top:2px;" class="plan-text"></div>
+      </div>
+      <button id="lockBtn" class="lock-btn">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#8A8D93" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></svg>
+        Lock dashboard
+      </button>
+    </div>
+  </aside>
+
+  <main class="dash-main">
+    <div class="topbar">
+      <div>
+        <h1 id="dashTitle">Good morning, Coach</h1>
+        <p id="dashSub">Here's how the floor looks today.</p>
+      </div>
+      <div class="topbar-actions" id="topbarActions">
+        <span id="savingIndicator" style="font-size:12px; color:#6F7177; display:none; align-items:center; gap:5px;">Saving…</span>
+        <div class="search-box" id="searchBox">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#6F7177" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+          <input id="searchInput" placeholder="Search members…" />
+        </div>
+        <button id="addMemberBtn" class="add-btn">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#0E0F11" stroke-width="2.5"><path d="M5 12h14M12 5v14"/></svg>
+          Add member
+        </button>
+      </div>
+    </div>
+
+    <div id="dashboardView">
+      <div class="stats-grid" id="statsGrid"></div>
+      <div class="content-grid">
+        <section>
+          <div class="section-head">
+            <h2 class="section-title">Members</h2>
+            <span class="hint">Tap status or fee to update</span>
+          </div>
+          <div id="membersContainer"></div>
+        </section>
+        <section>
+          <div class="section-head">
+            <h2 class="section-title">Broadcast</h2>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8A8D93" stroke-width="2"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+          </div>
+          <div class="notif-list" id="notifList"></div>
+          <div class="collection-card">
+            <div class="collection-head">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#3DDC84" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/></svg>
+              Collection rate
+            </div>
+            <div class="collection-value" id="collectionRate">0%</div>
+            <div class="collection-trend" id="collectionNote"></div>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <div id="membersView" style="display:none;">
+      <div id="membersOnlyGrid" class="members-grid"></div>
+    </div>
+
+    <div id="placeholderView" style="display:none;"></div>
+  </main>
+</div>
+
+<div id="adminScreen" class="screen">
+  <div class="admin-wrap">
+    <div class="admin-head">
+      <div class="admin-head-left">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C8FF4D" stroke-width="2"><circle cx="7.5" cy="15.5" r="5.5"/><path d="m21 2-9.6 9.6M15.5 7.5l3 3L22 7l-3-3"/></svg>
+        <h1>Owner admin</h1>
+      </div>
+      <button id="adminBackBtn" class="admin-back">Back to PIN screen</button>
+    </div>
+    <p class="admin-sub">Create gym accounts, set PINs, and extend subscriptions. Gym owners never see this screen.</p>
+    <button id="createGymOpenBtn" class="create-gym-btn">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#0E0F11" stroke-width="2.5"><path d="M5 12h14M12 5v14"/></svg>
+      Create new gym
+    </button>
+    <div id="adminErr" style="color:#FF8A8A; font-size:12.5px; margin-bottom:14px; display:none;"></div>
+    <div id="adminGymList"></div>
+  </div>
+</div>
+
+<div id="addMemberModal" class="modal-overlay">
+  <form id="addMemberForm" class="modal-box">
+    <div class="modal-head">
+      <h3>Add member</h3>
+      <button type="button" class="modal-close" id="closeAddMember">&times;</button>
+    </div>
+    <div class="field">
+      <div class="field-label">Name</div>
+      <input id="newMemberName" placeholder="Full name" autocomplete="off" />
+    </div>
+    <div class="field">
+      <div class="field-label">Goal</div>
+      <select id="newMemberGoal">
+        <option>Fat loss</option><option>Muscle gain</option><option>Strength</option><option>Mobility</option>
+      </select>
+    </div>
+    <div class="field">
+      <div class="field-label">Fee due (₹, leave blank if paid)</div>
+      <input id="newMemberDue" placeholder="0" inputmode="numeric" />
+    </div>
+    <button type="submit" class="modal-submit">Add member</button>
+  </form>
+</div>
+
+<div id="createGymModal" class="modal-overlay">
+  <div class="modal-box">
+    <div class="modal-head">
+      <h3>Create new gym</h3>
+      <button type="button" class="modal-close" id="closeCreateGym">&times;</button>
+    </div>
+    <div class="field">
+      <div class="field-label">Gym name</div>
+      <input id="newGymName" placeholder="e.g. Raveena Fitness" autocomplete="off" />
+    </div>
+    <div class="field">
+      <div class="field-label">PIN (you choose this, share with the owner)</div>
+      <input id="newGymPin" placeholder="e.g. 4821" autocomplete="off" style="font-family:'JetBrains Mono', monospace;" />
+    </div>
+    <div class="field">
+      <div class="field-label">Subscription length</div>
+      <select id="newGymMonths">
+        <option value="3">3 months — ₹1,000</option>
+        <option value="6">6 months — ₹1,800</option>
+        <option value="12">12 months — ₹3,200</option>
+      </select>
+    </div>
+    <div id="createGymErr" class="modal-error" style="display:none;">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#FF8A8A" stroke-width="2" style="flex-shrink:0; margin-top:1px;"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4M12 17h.01"/></svg>
+      <span id="createGymErrText"></span>
+    </div>
+    <button id="createGymSubmitBtn" class="modal-submit">Create gym & issue PIN</button>
+  </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+'use strict';
+
+/* ============================================================
+   GYMFLOW — Supabase-backed version
+   Real shared database: every device reads/writes the same
+   "gyms" table. PINs created on one phone work everywhere.
+   ============================================================ */
+
+// ---------- CONFIG: fill these in with your own project values ----------
+const SUPABASE_URL = "https://fjhoudgxxigdnzdgfjgh.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZqaG91ZGd4eGlnZG56ZGdmamdoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE5MzY2ODUsImV4cCI6MjA5NzUxMjY4NX0.Me1G14uNogpv97ccEjwm3zTvqT7VbN_LPUcoZ-rgCoc";
+const REST_URL = SUPABASE_URL + "/rest/v1/gyms";
+
+function sbHeaders(extra) {
+  return Object.assign({
+    "apikey": SUPABASE_ANON_KEY,
+    "Authorization": "Bearer " + SUPABASE_ANON_KEY,
+    "Content-Type": "application/json",
+  }, extra || {});
+}
+
+// ---------- Database access layer ----------
+async function dbGetGym(pin) {
+  const res = await fetch(`${REST_URL}?pin=eq.${encodeURIComponent(pin)}&select=*`, {
+    headers: sbHeaders(),
+  });
+  if (!res.ok) throw new Error("Couldn't reach the database (status " + res.status + ")");
+  const rows = await res.json();
+  if (!rows.length) return null;
+  const row = rows[0];
+  return {
+    pin: row.pin,
+    gymName: row.gym_name,
+    expiresOn: row.expires_on,
+    startedOn: row.started_on,
+    members: row.members || [],
+    notifs: row.notifs || [],
+  };
+}
+
+async function dbListGyms() {
+  const res = await fetch(`${REST_URL}?select=*&order=expires_on.asc`, { headers: sbHeaders() });
+  if (!res.ok) throw new Error("Couldn't load gym list (status " + res.status + ")");
+  const rows = await res.json();
+  return rows.map(row => ({
+    pin: row.pin,
+    gymName: row.gym_name,
+    expiresOn: row.expires_on,
+    startedOn: row.started_on,
+    members: row.members || [],
+    notifs: row.notifs || [],
+  }));
+}
+
+async function dbInsertGym(gym) {
+  const res = await fetch(REST_URL, {
+    method: "POST",
+    headers: sbHeaders({ "Prefer": "return=minimal" }),
+    body: JSON.stringify({
+      pin: gym.pin,
+      gym_name: gym.gymName,
+      expires_on: gym.expiresOn,
+      started_on: gym.startedOn,
+      members: gym.members,
+      notifs: gym.notifs,
+    }),
+  });
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error("Save failed (status " + res.status + "): " + text.slice(0, 120));
+  }
+}
+
+async function dbUpdateGym(pin, patch) {
+  const body = {};
+  if (patch.gymName !== undefined) body.gym_name = patch.gymName;
+  if (patch.expiresOn !== undefined) body.expires_on = patch.expiresOn;
+  if (patch.members !== undefined) body.members = patch.members;
+  if (patch.notifs !== undefined) body.notifs = patch.notifs;
+
+  const res = await fetch(`${REST_URL}?pin=eq.${encodeURIComponent(pin)}`, {
+    method: "PATCH",
+    headers: sbHeaders({ "Prefer": "return=minimal" }),
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error("Update failed (status " + res.status + "): " + text.slice(0, 120));
+  }
+}
+
+async function dbDeleteGym(pin) {
+  const res = await fetch(`${REST_URL}?pin=eq.${encodeURIComponent(pin)}`, {
+    method: "DELETE",
+    headers: sbHeaders({ "Prefer": "return=minimal" }),
+  });
+  if (!res.ok) throw new Error("Delete failed (status " + res.status + ")");
+}
+
+// ---------- date helpers ----------
+function todayISO() { return new Date().toISOString().slice(0, 10); }
+function addMonths(dateStr, months) {
+  const d = new Date(dateStr);
+  d.setMonth(d.getMonth() + months);
+  return d.toISOString().slice(0, 10);
+}
+function daysUntil(dateStr) {
+  const ms = new Date(dateStr) - new Date(todayISO());
+  return Math.ceil(ms / (1000 * 60 * 60 * 24));
+}
+function fmtDate(dateStr) {
+  if (!dateStr) return "—";
+  return new Date(dateStr).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+}
+function fmtINR(n) { return Number(n || 0).toLocaleString("en-IN"); }
+
+function seedGymData(gymName) {
+  return {
+    gymName,
+    members: [
+      { id: "m1", name: "Aarav Mehta", goal: "Muscle gain", status: "active", due: 0, streak: 18 },
+      { id: "m2", name: "Priya Nair", goal: "Fat loss", status: "expiring", due: 0, streak: 31 },
+      { id: "m3", name: "Karan Shah", goal: "Strength", status: "pending", due: 1800, streak: 4 },
+    ],
+    notifs: [
+      { tag: "Renewal", title: "Set up your first renewal reminder", body: "Add members and mark fee status to track who needs a nudge.", time: "now", color: "#3DDC84" },
+    ],
+  };
+}
+
+const STATUS_STYLE = {
+  active:   { dot: "#3DDC84", bg: "rgba(61,220,132,0.1)", text: "#3DDC84", label: "Active" },
+  pending:  { dot: "#FF5C5C", bg: "rgba(255,92,92,0.1)",  text: "#FF8A8A", label: "Pending" },
+  expiring: { dot: "#F5B544", bg: "rgba(245,181,68,0.1)", text: "#F5B544", label: "Expiring" },
+};
+
+const NAV = [
+  { id: "dashboard", label: "Dashboard", icon: '<rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/>' },
+  { id: "members", label: "Members", icon: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>' },
+  { id: "attendance", label: "Attendance", icon: '<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><path d="m9 16 2 2 4-4"/>' },
+  { id: "payments", label: "Payments", icon: '<rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/>' },
+  { id: "plans", label: "Workout Plans", icon: '<path d="M6.5 6.5 17.5 17.5"/><path d="m21 21-1-1"/><path d="m3 3 1 1"/><path d="m18 22 4-4"/><path d="m2 6 4-4"/><path d="m3 10 7-7"/><path d="m14 21 7-7"/>' },
+  { id: "pt", label: "PT Sessions", icon: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="m17 11 2 2 4-4"/>' },
+  { id: "notifications", label: "Notifications", icon: '<path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>' },
+  { id: "reports", label: "Reports", icon: '<path d="M3 3v18h18"/><path d="M18 17V9M13 17V5M8 17v-3"/>' },
+  { id: "settings", label: "Settings", icon: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>' },
+];
+
+const PLACEHOLDER_COPY = {
+  attendance: { title: "Attendance calendar", body: "Tap-to-check-in calendar — green for present, red for absent, gray for holidays." },
+  payments: { title: "Payments & billing", body: "Upcoming dues, paid history, reminders, and a monthly revenue graph." },
+  plans: { title: "Workout plans", body: "Assign and track fat-loss, muscle-gain, and mobility programs per member." },
+  pt: { title: "PT sessions", body: "Schedule and track one-on-one personal training sessions." },
+  reports: { title: "Reports", body: "Monthly revenue, retention, and attendance trends." },
+  settings: { title: "Settings", body: "Manage gym profile and preferences." },
+};
+
+let currentPin = null;
+let currentGym = null;
+let currentView = "dashboard";
+let searchTerm = "";
+
+function showScreen(id) {
+  document.querySelectorAll(".screen").forEach(s => s.classList.remove("visible"));
+  document.getElementById(id).classList.add("visible");
+}
+
+function showToast(msg, isError) {
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.className = "toast visible" + (isError ? " error" : "");
+  setTimeout(() => { t.classList.remove("visible"); }, 3000);
+}
+
+// ============================================================
+// PIN SCREEN
+// ============================================================
+const pinInput = document.getElementById("pinInput");
+const pinError = document.getElementById("pinError");
+const pinErrorText = document.getElementById("pinErrorText");
+const unlockBtn = document.getElementById("unlockBtn");
+
+function showPinError(msg) {
+  pinErrorText.textContent = msg;
+  pinError.classList.add("visible");
+  pinInput.classList.add("error-border");
+}
+function clearPinError() {
+  pinError.classList.remove("visible");
+  pinInput.classList.remove("error-border");
+}
+
+const OWNER_SECRET = "Hina143pankaj";
+
+async function attemptUnlock() {
+  const val = pinInput.value.trim();
+  if (!val) { showPinError("Enter your gym PIN to continue."); return; }
+
+  // Secret owner entry — checked locally, never sent anywhere, never shown on screen.
+  if (val === OWNER_SECRET) {
+    pinInput.value = "";
+    clearPinError();
+    renderAdminPanel();
+    showScreen("adminScreen");
+    return;
+  }
+
+  unlockBtn.disabled = true;
+  unlockBtn.innerHTML = '<span class="spin"></span> Checking…';
+  clearPinError();
+
+  try {
+    const gym = await dbGetGym(val);
+    if (!gym) {
+      showPinError("That PIN doesn't match any gym. Check with your GymFlow contact.");
+    } else {
+      currentPin = val;
+      currentGym = gym;
+      if (daysUntil(gym.expiresOn) < 0) {
+        renderExpiredScreen();
+        showScreen("expiredScreen");
+      } else {
+        renderDashboard();
+        showScreen("dashboardScreen");
+      }
+    }
+  } catch (e) {
+    showPinError(e.message || "Couldn't reach the server. Check your connection and try again.");
+  }
+
+  unlockBtn.disabled = false;
+  unlockBtn.textContent = "Unlock dashboard";
+}
+
+unlockBtn.addEventListener("click", attemptUnlock);
+pinInput.addEventListener("keydown", (e) => { if (e.key === "Enter") attemptUnlock(); });
+pinInput.addEventListener("input", clearPinError);
+
+// ============================================================
+// EXPIRED SCREEN
+// ============================================================
+function renderExpiredScreen() {
+  document.getElementById("expiredGymName").textContent = (currentGym.gymName || "This gym") + "'s plan has expired";
+  document.getElementById("expiredDate").textContent = fmtDate(currentGym.expiresOn);
+}
+document.getElementById("expiredBackBtn").addEventListener("click", () => {
+  currentPin = null; currentGym = null; pinInput.value = "";
+  showScreen("pinScreen");
+});
+
+// ============================================================
+// DASHBOARD
+// ============================================================
+let saveTimer = null;
+function persistGym() {
+  const indicator = document.getElementById("savingIndicator");
+  indicator.style.display = "flex";
+  if (saveTimer) clearTimeout(saveTimer);
+  saveTimer = setTimeout(async () => {
+    try {
+      await dbUpdateGym(currentPin, { members: currentGym.members, notifs: currentGym.notifs });
+    } catch (e) {
+      showToast("Couldn't save: " + e.message, true);
+    }
+    indicator.style.display = "none";
+  }, 400);
+}
+
+function cycleStatus(id) {
+  const order = ["active", "expiring", "pending"];
+  const m = currentGym.members.find(m => m.id === id);
+  if (!m) return;
+  m.status = order[(order.indexOf(m.status) + 1) % order.length];
+  persistGym();
+  renderDashboard();
+}
+function togglePaid(id) {
+  const m = currentGym.members.find(m => m.id === id);
+  if (!m) return;
+  m.due = m.due ? 0 : 1500;
+  persistGym();
+  renderDashboard();
+}
+
+function memberCardHTML(m) {
+  const s = STATUS_STYLE[m.status];
+  const initials = m.name.split(" ").map(w => w[0]).slice(0, 2).join("").toUpperCase();
+  return `
+    <div class="member-card">
+      <div class="member-top">
+        <div class="avatar">${initials}</div>
+        <div class="member-info">
+          <div class="member-name">${escapeHTML(m.name)}</div>
+          <div class="member-goal">${escapeHTML(m.goal)}</div>
+        </div>
+        <button class="status-pill" style="background:${s.bg}; color:${s.text};" onclick="cycleStatus('${m.id}')">
+          <span class="status-dot" style="background:${s.dot};"></span>${s.label}
+        </button>
+      </div>
+      <div class="member-foot">
+        <div>
+          <div class="foot-label">Fee due</div>
+          <button class="foot-value" style="color:${m.due ? '#FF8A8A' : '#3DDC84'};" onclick="togglePaid('${m.id}')">
+            ${m.due ? '₹' + fmtINR(m.due) : 'Cleared'}
+          </button>
+        </div>
+        <div>
+          <div class="foot-label">Streak</div>
+          <div class="streak-value">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#C8FF4D" stroke-width="2"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>
+            ${m.streak}d
+          </div>
+        </div>
+      </div>
+    </div>`;
+}
+
+function escapeHTML(str) {
+  const div = document.createElement("div");
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+function filteredMembers() {
+  return currentGym.members.filter(m => m.name.toLowerCase().includes(searchTerm.toLowerCase()));
+}
+
+function renderNav() {
+  const navList = document.getElementById("navList");
+  navList.innerHTML = "";
+  NAV.forEach(item => {
+    const btn = document.createElement("button");
+    btn.className = "nav-item" + (currentView === item.id ? " active" : "");
+    btn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="${currentView === item.id ? '#C8FF4D' : '#8A8D93'}" stroke-width="2">${item.icon}</svg><span>${item.label}</span>`;
+    btn.addEventListener("click", () => { currentView = item.id; renderDashboard(); });
+    navList.appendChild(btn);
+  });
+}
+
+function renderStats() {
+  const total = currentGym.members.length;
+  const active = currentGym.members.filter(m => m.status === "active").length;
+  const pendingTotal = currentGym.members.reduce((s, m) => s + (m.due || 0), 0);
+  const pendingCount = currentGym.members.filter(m => m.due > 0).length;
+  const expiring = currentGym.members.filter(m => m.status === "expiring").length;
+
+  const stats = [
+    { label: "Total members", value: total, target: Math.max(total, 1), suffix: "", note: `${active} active` },
+    { label: "Active members", value: active, target: Math.max(total, 1), suffix: "", note: `${total ? Math.round((active/total)*100) : 0}% of roster` },
+    { label: "Pending payments", value: pendingTotal, target: Math.max(pendingTotal, 1), suffix: "₹", note: `${pendingCount} members` },
+    { label: "Expiring", value: expiring, target: Math.max(total, 1), suffix: "", note: "renew this week" },
+  ];
+
+  const grid = document.getElementById("statsGrid");
+  grid.innerHTML = "";
+  stats.forEach((s, i) => {
+    const card = document.createElement("div");
+    card.className = "stat-card";
+    card.style.animationDelay = (i * 70) + "ms";
+    const pct = Math.min(100, Math.round((s.value / s.target) * 100));
+    card.innerHTML = `
+      <div class="stat-top">
+        <span class="stat-label">${s.label}</span>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#54565C" stroke-width="2"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
+      </div>
+      <div class="stat-value" data-target="${s.value}" data-suffix="${s.suffix}">${s.suffix}0</div>
+      <div class="stat-note">${s.note}</div>
+      <div class="stat-bar-track"><div class="stat-bar-fill" data-pct="${pct}"></div></div>
+    `;
+    grid.appendChild(card);
+  });
+
+  document.querySelectorAll(".stat-value").forEach((el, i) => {
+    const target = parseInt(el.dataset.target, 10);
+    const suffix = el.dataset.suffix;
+    const duration = 900;
+    let start = null;
+    function step(ts) {
+      if (!start) start = ts;
+      const progress = Math.min((ts - start) / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      el.textContent = suffix + fmtINR(Math.round(eased * target));
+      if (progress < 1) requestAnimationFrame(step);
+    }
+    setTimeout(() => requestAnimationFrame(step), i * 120);
+  });
+  document.querySelectorAll(".stat-bar-fill").forEach((el, i) => {
+    setTimeout(() => { el.style.width = el.dataset.pct + "%"; }, i * 120 + 50);
+  });
+
+  const collectRate = total ? Math.round(((total - pendingCount) / total) * 100) : 0;
+  document.getElementById("collectionRate").textContent = collectRate + "%";
+  document.getElementById("collectionNote").innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#3DDC84" stroke-width="2"><path d="M23 6 13.5 15.5l-5-5L1 18"/><path d="M17 6h6v6"/></svg> ${total - pendingCount} of ${total} fully paid`;
+}
+
+function renderMembers() {
+  const list = filteredMembers();
+  const dashContainer = document.getElementById("membersContainer");
+  const membersOnlyGrid = document.getElementById("membersOnlyGrid");
+
+  if (list.length === 0) {
+    const emptyHTML = `<div class="empty-state">No members yet. Add your first one to get started.</div>`;
+    dashContainer.innerHTML = emptyHTML;
+    membersOnlyGrid.innerHTML = emptyHTML;
+    return;
+  }
+  const dashHTML = `<div class="members-grid">${list.map(memberCardHTML).join("")}</div>`;
+  dashContainer.innerHTML = dashHTML;
+  membersOnlyGrid.innerHTML = list.map(memberCardHTML).join("");
+}
+
+function renderNotifs() {
+  const notifList = document.getElementById("notifList");
+  notifList.innerHTML = currentGym.notifs.map(n => `
+    <div class="notif-card">
+      <div class="notif-top">
+        <span class="notif-tag" style="color:${n.color};">${n.tag}</span>
+        <span class="notif-time">${n.time}</span>
+      </div>
+      <div class="notif-title">${escapeHTML(n.title)}</div>
+      <div class="notif-body">${escapeHTML(n.body)}</div>
+    </div>`).join("");
+}
+
+function renderPlaceholder() {
+  const ph = document.getElementById("placeholderView");
+  const copy = PLACEHOLDER_COPY[currentView] || { title: "Coming soon", body: "This screen is part of the full GymFlow build." };
+  ph.innerHTML = `
+    <div class="placeholder">
+      <div class="placeholder-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#C8FF4D" stroke-width="2"><path d="M3 3v18h18"/><path d="M18 17V9M13 17V5M8 17v-3"/></svg></div>
+      <h2>${copy.title}</h2>
+      <p>${copy.body}</p>
+    </div>`;
+}
+
+function renderDashboard() {
+  document.getElementById("sbGymName").textContent = currentGym.gymName;
+  const daysLeft = daysUntil(currentGym.expiresOn);
+  const planBox = document.getElementById("planBox");
+  const planTitle = document.getElementById("planBoxTitle");
+  const planSub = document.getElementById("planBoxSub");
+  if (daysLeft <= 10) {
+    planBox.style.background = "rgba(245,181,68,0.08)";
+    planBox.style.border = "1px solid rgba(245,181,68,0.25)";
+    planTitle.style.color = "#F5B544";
+    planTitle.textContent = `Renews in ${daysLeft}d`;
+  } else {
+    planBox.style.background = "#141518";
+    planBox.style.border = "1px solid #1f2024";
+    planTitle.style.color = "#7A7D83";
+    planTitle.textContent = "Plan active";
+  }
+  planSub.textContent = `Until ${fmtDate(currentGym.expiresOn)}`;
+
+  renderNav();
+
+  const dashTitle = document.getElementById("dashTitle");
+  const dashSub = document.getElementById("dashSub");
+  const navMeta = NAV.find(n => n.id === currentView);
+  dashTitle.textContent = currentView === "dashboard" ? "Good morning, Coach" : (navMeta ? navMeta.label : "");
+  dashSub.textContent = currentView === "dashboard" ? "Here's how the floor looks today." : `Managing ${currentGym.gymName}`;
+
+  const showSearchAdd = currentView === "dashboard" || currentView === "members";
+  document.getElementById("searchBox").style.display = showSearchAdd ? "flex" : "none";
+  document.getElementById("addMemberBtn").style.display = showSearchAdd ? "flex" : "none";
+
+  document.getElementById("dashboardView").style.display = currentView === "dashboard" ? "block" : "none";
+  document.getElementById("membersView").style.display = currentView === "members" ? "block" : "none";
+  document.getElementById("placeholderView").style.display = (currentView !== "dashboard" && currentView !== "members") ? "block" : "none";
+
+  if (currentView === "dashboard") { renderStats(); renderMembers(); renderNotifs(); }
+  else if (currentView === "members") { renderMembers(); }
+  else { renderPlaceholder(); }
+}
+
+document.getElementById("searchInput").addEventListener("input", (e) => {
+  searchTerm = e.target.value;
+  renderMembers();
+});
+
+document.getElementById("lockBtn").addEventListener("click", () => {
+  currentPin = null; currentGym = null; currentView = "dashboard"; searchTerm = "";
+  pinInput.value = "";
+  document.getElementById("searchInput").value = "";
+  showScreen("pinScreen");
+});
+
+// ---------- Add Member modal ----------
+const addMemberModal = document.getElementById("addMemberModal");
+document.getElementById("addMemberBtn").addEventListener("click", () => {
+  document.getElementById("newMemberName").value = "";
+  document.getElementById("newMemberGoal").value = "Fat loss";
+  document.getElementById("newMemberDue").value = "";
+  addMemberModal.classList.add("visible");
+  document.getElementById("newMemberName").focus();
+});
+document.getElementById("closeAddMember").addEventListener("click", () => addMemberModal.classList.remove("visible"));
+document.getElementById("addMemberForm").addEventListener("submit", (e) => {
+  e.preventDefault();
+  const name = document.getElementById("newMemberName").value.trim();
+  if (!name) return;
+  const goal = document.getElementById("newMemberGoal").value;
+  const due = Number(document.getElementById("newMemberDue").value.replace(/\D/g, "")) || 0;
+  currentGym.members.unshift({ id: "m" + Date.now(), name, goal, status: due ? "pending" : "active", due, streak: 0 });
+  persistGym();
+  addMemberModal.classList.remove("visible");
+  renderDashboard();
+});
+
+// ============================================================
+// ADMIN PANEL
+// ============================================================
+let confirmDeletePin = null;
+
+async function renderAdminPanel() {
+  const list = document.getElementById("adminGymList");
+  const adminErr = document.getElementById("adminErr");
+  adminErr.style.display = "none";
+  list.innerHTML = `<div style="color:#6F7177; font-size:13px;">Loading gyms…</div>`;
+
+  let gyms;
+  try {
+    gyms = await dbListGyms();
+  } catch (e) {
+    adminErr.textContent = "Couldn't load gym list: " + e.message;
+    adminErr.style.display = "block";
+    list.innerHTML = "";
+    return;
+  }
+
+  if (gyms.length === 0) {
+    list.innerHTML = `<div class="empty-state">No gyms yet. Create one to issue its first PIN.</div>`;
+    return;
+  }
+
+  list.innerHTML = gyms.map(gym => {
+    const pin = gym.pin;
+    const daysLeft = daysUntil(gym.expiresOn);
+    const expired = daysLeft < 0;
+    const expiringSoon = !expired && daysLeft <= 10;
+    const badgeColor = expired ? "#FF8A8A" : expiringSoon ? "#F5B544" : "#3DDC84";
+    const badgeBg = expired ? "rgba(255,92,92,0.1)" : expiringSoon ? "rgba(245,181,68,0.1)" : "rgba(61,220,132,0.1)";
+    const badgeText = expired ? "Expired" : expiringSoon ? `${daysLeft}d left` : "Active";
+    const isConfirming = confirmDeletePin === pin;
+
+    return `
+      <div class="gym-row">
+        <div class="gym-row-top">
+          <div>
+            <div class="gym-row-name">${escapeHTML(gym.gymName)}</div>
+            <div class="gym-row-pin">PIN: ${escapeHTML(pin)}</div>
+          </div>
+          <span class="gym-row-badge" style="color:${badgeColor}; background:${badgeBg};">${badgeText}</span>
+        </div>
+        <div class="gym-row-foot">
+          <span class="gym-row-meta">Expires ${fmtDate(gym.expiresOn)} · ${gym.members.length} members</span>
+          <div class="gym-row-actions">
+            <button class="renew-btn" onclick="renewGym('${pin}')">+3 months</button>
+            ${isConfirming
+              ? `<button class="del-confirm-btn" onclick="deleteGym('${pin}')">Confirm delete</button>`
+              : `<button class="del-btn" onclick="askDeleteGym('${pin}')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#8A8D93" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>`}
+          </div>
+        </div>
+      </div>`;
+  }).join("");
+}
+
+function askDeleteGym(pin) {
+  confirmDeletePin = pin;
+  renderAdminPanel();
+}
+
+async function deleteGym(pin) {
+  try {
+    await dbDeleteGym(pin);
+    confirmDeletePin = null;
+    renderAdminPanel();
+    showToast("Gym deleted.");
+  } catch (e) {
+    showToast("Couldn't delete: " + e.message, true);
+  }
+}
+
+async function renewGym(pin) {
+  try {
+    const gym = await dbGetGym(pin);
+    if (!gym) return;
+    const base = daysUntil(gym.expiresOn) > 0 ? gym.expiresOn : todayISO();
+    const newExpiry = addMonths(base, 3);
+    await dbUpdateGym(pin, { expiresOn: newExpiry });
+    renderAdminPanel();
+    showToast("Renewed — now expires " + fmtDate(newExpiry));
+  } catch (e) {
+    showToast("Couldn't renew: " + e.message, true);
+  }
+}
+
+document.getElementById("adminBackBtn").addEventListener("click", () => showScreen("pinScreen"));
+
+// ---------- Create Gym modal ----------
+const createGymModal = document.getElementById("createGymModal");
+const createGymErr = document.getElementById("createGymErr");
+const createGymErrText = document.getElementById("createGymErrText");
+const createGymSubmitBtn = document.getElementById("createGymSubmitBtn");
+
+function showCreateGymError(msg) {
+  createGymErrText.textContent = msg;
+  createGymErr.style.display = "flex";
+}
+function hideCreateGymError() {
+  createGymErr.style.display = "none";
+}
+
+document.getElementById("createGymOpenBtn").addEventListener("click", () => {
+  document.getElementById("newGymName").value = "";
+  document.getElementById("newGymPin").value = "";
+  document.getElementById("newGymMonths").value = "3";
+  hideCreateGymError();
+  createGymModal.classList.add("visible");
+  document.getElementById("newGymName").focus();
+});
+document.getElementById("closeCreateGym").addEventListener("click", () => createGymModal.classList.remove("visible"));
+
+async function submitCreateGym() {
+  const name = document.getElementById("newGymName").value.trim();
+  const pin = document.getElementById("newGymPin").value.trim();
+  const months = Number(document.getElementById("newGymMonths").value);
+
+  if (!name) { showCreateGymError("Enter a gym name."); return; }
+  if (!pin) { showCreateGymError("Enter a PIN for this gym."); return; }
+
+  createGymSubmitBtn.disabled = true;
+  createGymSubmitBtn.innerHTML = '<span class="spin"></span> Creating…';
+  hideCreateGymError();
+
+  try {
+    const existing = await dbGetGym(pin);
+    if (existing) {
+      showCreateGymError("That PIN is already in use — pick a different one.");
+      createGymSubmitBtn.disabled = false;
+      createGymSubmitBtn.textContent = "Create gym & issue PIN";
+      return;
+    }
+
+    const newGym = { pin, ...seedGymData(name), expiresOn: addMonths(todayISO(), months), startedOn: todayISO() };
+    await dbInsertGym(newGym);
+
+    createGymModal.classList.remove("visible");
+    renderAdminPanel();
+    showToast("Gym created — PIN " + pin + " is ready to share.");
+  } catch (e) {
+    showCreateGymError(e.message || "Something went wrong. Try again.");
+  }
+
+  createGymSubmitBtn.disabled = false;
+  createGymSubmitBtn.textContent = "Create gym & issue PIN";
+}
+
+createGymSubmitBtn.addEventListener("click", submitCreateGym);
+createGymSubmitBtn.addEventListener("touchend", (e) => { e.preventDefault(); submitCreateGym(); });
+
+// ---------- init ----------
+showScreen("pinScreen");
+</script>
+</body>
+</html>
